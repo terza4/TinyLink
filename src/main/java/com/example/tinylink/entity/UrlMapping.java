@@ -25,4 +25,5 @@ public class UrlMapping {
 
     @Column(nullable = false)
     private LocalDateTime creationDate;
+
 }
