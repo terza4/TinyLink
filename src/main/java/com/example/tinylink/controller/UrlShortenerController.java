@@ -17,10 +17,6 @@ public class UrlShortenerController {
 
     private final UrlShortenerService urlShortenerService;
 
-    public UrlShortenerController(UrlShortenerService urlShortenerService) {
-        this.urlShortenerService = urlShortenerService;
-    }
-
     @PostMapping("/shorten")
     public ResponseEntity<ShortenResponse> shortenUrl(@Valid @RequestBody ShortenRequest request) {
         String shortCode = urlShortenerService.shortenUrl(request.getUrl());

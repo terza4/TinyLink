@@ -15,10 +15,6 @@ public class UrlShortenerService {
 
     private final UrlMappingRepository urlMappingRepository;
 
-    public UrlShortenerService(UrlMappingRepository urlMappingRepository) {
-        this.urlMappingRepository = urlMappingRepository;
-    }
-
     private static final String ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private static final int SHORTCODE_LENGTH = 6;
     private final Random random = new Random();
