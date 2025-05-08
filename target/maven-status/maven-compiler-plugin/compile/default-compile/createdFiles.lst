@@ -6,4 +6,5 @@ com/example/tinylink/entity/UrlMapping$UrlMappingBuilder.class
 com/example/tinylink/repository/UrlMappingRepository.class
 com/example/tinylink/dto/ShortenRequest.class
 com/example/tinylink/exception/GlobalExceptionHandler.class
+com/example/tinylink/controller/UrlShortenerController$RedirectController.class
 com/example/tinylink/controller/UrlShortenerController.class

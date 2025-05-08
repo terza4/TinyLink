@@ -24,9 +24,19 @@ public class UrlShortenerController {
         return new ResponseEntity<>(new ShortenResponse(shortUrl), HttpStatus.CREATED);
     }
 
-    @GetMapping("/{shortCode}")
-    public RedirectView redirectToLongUrl(@PathVariable String shortCode) {
-        String longUrl = urlShortenerService.getLongUrl(shortCode);
-        return new RedirectView(longUrl);
+
+    // I ODVOJENO:
+    @RestController
+    @RequiredArgsConstructor
+    public class RedirectController {
+
+        private final UrlShortenerService urlShortenerService;
+
+        @GetMapping("/{shortCode}")
+        public RedirectView redirectToLongUrl(@PathVariable String shortCode) {
+            String longUrl = urlShortenerService.getLongUrl(shortCode);
+            return new RedirectView(longUrl);
+        }
     }
+
 }
