@@ -51,7 +51,7 @@ public class UrlShortenerService {
                 .orElseThrow(() -> new RuntimeException("Not found"));
     }
 
-    private String generateRandomCode() {
+    public String generateRandomCode() {
         StringBuilder code = new StringBuilder(SHORTCODE_LENGTH);
         for (int i = 0; i < SHORTCODE_LENGTH; i++) {
             int index = random.nextInt(ALPHABET.length());
