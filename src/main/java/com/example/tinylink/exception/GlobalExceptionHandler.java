@@ -1,30 +1,46 @@
 package com.example.tinylink.exception;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.validation.FieldError;
+import org.springframework.http.*;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.validation.FieldError;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<String> handleRuntimeException(RuntimeException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+    public ResponseEntity<ErrorResponse> handleRuntimeException(RuntimeException ex) {
+        ErrorResponse response = ErrorResponse.builder()
+                .message(ex.getMessage())
+                .httpCode(HttpStatus.NOT_FOUND.value())
+                .errorCode("NOT_FOUND")
+                .errors(List.of(ex.getMessage()))
+                .build();
+
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> handleValidationExceptions(MethodArgumentNotValidException ex) {
-        Map<String, String> errors = new HashMap<>();
+    public ResponseEntity<ErrorResponse> handleValidationExceptions(MethodArgumentNotValidException ex) {
+        Map<String, String> fieldErrors = new HashMap<>();
+        List<String> errorMessages = new ArrayList<>();
+
         ex.getBindingResult().getAllErrors().forEach((error) -> {
             String field = ((FieldError) error).getField();
             String message = error.getDefaultMessage();
-            errors.put(field, message);
+            fieldErrors.put(field, message);
+            errorMessages.add(field + ": " + message);
         });
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
+
+        ErrorResponse response = ErrorResponse.builder()
+                .message("Validation failed")
+                .httpCode(HttpStatus.BAD_REQUEST.value())
+                .errorCode("VALIDATION_ERROR")
+                .errors(errorMessages)
+                .build();
+
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 }

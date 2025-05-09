@@ -37,6 +37,6 @@ public class UrlShortenerController {
             String longUrl = urlShortenerService.getLongUrl(shortCode);
             return new RedirectView(longUrl);
         }
-    }
+      }
 
 }

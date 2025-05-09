@@ -8,6 +8,6 @@ import lombok.Setter;
 @Setter
 public class ShortenRequest {
 
-    @NotBlank(message = "URL ne smije biti prazan.")
+
     private String url;
 }

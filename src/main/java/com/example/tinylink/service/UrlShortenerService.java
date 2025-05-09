@@ -48,7 +48,7 @@ public class UrlShortenerService {
     public String getLongUrl(String shortCode) {
         return urlMappingRepository.findByShortCode(shortCode)
                 .map(UrlMapping::getLongUrl)
-                .orElseThrow(() -> new RuntimeException("Kratki URL nije pronađen."));
+                .orElseThrow(() -> new RuntimeException("Not found"));
     }
 
     private String generateRandomCode() {

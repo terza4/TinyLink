@@ -1,0 +1,13 @@
+# Java build files
+/target/
+
+# IntelliJ
+.idea/
+*.iml
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
