@@ -22,23 +22,13 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleValidationExceptions(MethodArgumentNotValidException ex) {
-        Map<String, String> fieldErrors = new HashMap<>();
-        List<String> errorMessages = new ArrayList<>();
-
-        ex.getBindingResult().getAllErrors().forEach((error) -> {
-            String field = ((FieldError) error).getField();
-            String message = error.getDefaultMessage();
-            fieldErrors.put(field, message);
-            errorMessages.add(field + ": " + message);
-        });
-
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex) {
         ErrorResponse response = ErrorResponse.builder()
-                .message("Validation failed")
+                .message(ex.getMessage())
                 .httpCode(HttpStatus.BAD_REQUEST.value())
-                .errorCode("VALIDATION_ERROR")
-                .errors(errorMessages)
+                .errorCode("BAD_REQUEST")
+                .errors(List.of(ex.getMessage()))
                 .build();
 
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);

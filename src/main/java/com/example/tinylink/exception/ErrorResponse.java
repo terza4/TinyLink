@@ -14,5 +14,6 @@ public class ErrorResponse {
     private int httpCode;
     private String errorCode;
     private List<String> errors;
+
 }
 
