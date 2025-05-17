@@ -19,7 +19,7 @@ public class UrlMapping {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "long_url", nullable = false, length = 2048)
+    @Column(name = "long_url", nullable = false, length = 5000)
     private String longUrl;
 
     @Column(name = "short_code", nullable = false, unique = true, length = 10)
@@ -27,4 +27,8 @@ public class UrlMapping {
 
     @Column(name = "creation_date", nullable = false)
     private LocalDateTime creationDate;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
 }

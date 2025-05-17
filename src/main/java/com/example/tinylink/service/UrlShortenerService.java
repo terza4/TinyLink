@@ -1,11 +1,14 @@
 package com.example.tinylink.service;
 
 import com.example.tinylink.entity.UrlMapping;
+import com.example.tinylink.repository.UserRepository;
+import com.example.tinylink.entity.User;
 import com.example.tinylink.repository.UrlMappingRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 
@@ -14,20 +17,24 @@ import java.util.Random;
 public class UrlShortenerService {
 
     private final UrlMappingRepository urlMappingRepository;
+    private final UserRepository userRepository;
 
     private static final String ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private static final int SHORTCODE_LENGTH = 6;
     private final Random random = new Random();
 
-    public String shortenUrl(String longUrl) {
+    public String shortenUrl(String longUrl, String username) {
+        User user = null;
+        if (username != null) {
+            user = userRepository.findByUsername(username)
+                    .orElseThrow(() -> new RuntimeException("Korisnik nije pronađen."));
+        }
+
+
         if (longUrl == null || longUrl.isBlank()) {
             throw new IllegalArgumentException("URL ne smije biti prazan.");
         }
 
-        Optional<UrlMapping> existing = urlMappingRepository.findByLongUrl(longUrl);
-        if (existing.isPresent()) {
-            return existing.get().getShortCode();
-        }
 
         String shortCode;
         do {
@@ -38,6 +45,7 @@ public class UrlShortenerService {
                 .longUrl(longUrl)
                 .shortCode(shortCode)
                 .creationDate(LocalDateTime.now())
+                .user(user)
                 .build();
 
         urlMappingRepository.save(newMapping);
@@ -58,6 +66,13 @@ public class UrlShortenerService {
             code.append(ALPHABET.charAt(index));
         }
         return code.toString();
+    }
+
+    public List<UrlMapping> getAllByUsername(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Korisnik nije pronađen."));
+
+        return urlMappingRepository.findAllByUser(user);
     }
 }
 
