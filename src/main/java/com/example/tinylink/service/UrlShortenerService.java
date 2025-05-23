@@ -5,11 +5,12 @@ import com.example.tinylink.repository.UserRepository;
 import com.example.tinylink.entity.User;
 import com.example.tinylink.repository.UrlMappingRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.Random;
 
 @Service
@@ -73,6 +74,13 @@ public class UrlShortenerService {
                 .orElseThrow(() -> new RuntimeException("Korisnik nije pronađen."));
 
         return urlMappingRepository.findAllByUser(user);
+    }
+
+    public void deleteByShortCode(String shortCode) {
+        UrlMapping urlMapping = urlMappingRepository.findByShortCode(shortCode)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Link not found"));
+
+        urlMappingRepository.delete(urlMapping);
     }
 }
 

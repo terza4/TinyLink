@@ -67,6 +67,12 @@ public class UrlShortenerController {
         return ResponseEntity.ok(responses);
     }
 
+    @DeleteMapping("/delete/{shortCode}")
+    public ResponseEntity<Void> deleteShortCode(@PathVariable("shortCode") String shortCode) {
+        urlShortenerService.deleteByShortCode(shortCode);
+        return ResponseEntity.noContent().build(); // 204 No Content
+    }
+
 
 
 }

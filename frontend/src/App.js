@@ -32,29 +32,30 @@ function App() {
         },
       });
       setHistory(response.data);
-    } catch (error) {
-      console.error("Greška prilikom dohvaćanja historije:", error);
+    } catch (err) {
+      console.error("Greška prilikom dohvaćanja historije:", err);
     }
   };
 
   // registracija
   const handleRegister = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await axios.post("http://localhost:8080/auth/register", {
-        username: registerUsername,
-        password: registerPassword,
-      });
+      e.preventDefault();
+      try {
+        const response = await axios.post("http://localhost:8080/auth/register", {
+          username: registerUsername,
+          password: registerPassword,
+        });
+        const newToken = response.data.replace("Bearer ", "");
+        login(newToken);
+        setShowRegister(false);
+        alert("Uspješna registracija!");
+      } catch (err) {
+        const errorMessage = err.response?.data?.message || err.response?.data || "Greška prilikom registracija";
+        alert(errorMessage);
+      }
+    };
 
-      const newToken = response.data.replace("Bearer ", "");
-      login(newToken);
-      setShowRegister(false);
-      alert("Uspješna registracija!");
-    } catch (err) {
-      console.error(err);
-      alert("Greška prilikom registracije");
-    }
-  };
+
 
   // login
   const handleLogin = async (e) => {
@@ -70,8 +71,8 @@ function App() {
       setShowLogin(false);
       alert("Uspješno prijavljeni!");
     } catch (err) {
-      console.error(err);
-      alert("Login greška");
+      const errorMessage = err.response?.data?.message || err.response?.data || "Greška prilikom logina";
+      alert(errorMessage);
     }
   };
 
@@ -127,6 +128,26 @@ function App() {
       .catch((err) => alert("Greška prilikom kopiranja: " + err));
   };
 
+  //delete linka iz historije
+   const handleDelete = async (shortCode) => {
+     try {
+       await axios.delete(`http://localhost:8080/api/delete/${shortCode}`, {
+
+         headers: {
+           Authorization: `Bearer ${token}`
+         }
+       });
+
+       // osvježavanje liste nakon brisanja
+       fetchHistory();
+     } catch (error) {
+       console.error("Greška pri brisanju linka:", error.response?.data || error.message);
+     }
+   };
+
+
+
+
   return (
     <>
       {/* Dugmadi Register, Login, History, Logout */}
@@ -165,7 +186,7 @@ function App() {
       )}
 
       {/* Historija linkova */}
-      {showHistory && <HistoryList history={history} />}
+      {showHistory && <HistoryList history={history}  onCopy={handleCopy} onDelete={handleDelete}/>}
 
       {/* URL Shortener forma */}
       <div className="container">

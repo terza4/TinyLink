@@ -20,21 +20,26 @@ public class UserService {
         this.jwtTokenProvider = jwtTokenProvider;
     }
 
+
     public String register(UserDTO userDTO) {
         if (userRepository.existsByUsername(userDTO.getUsername())) {
             throw new RuntimeException("Korisničko ime je zauzeto.");
         }
-
+        if(userDTO.getUsername() == null || userDTO.getPassword().length() < 4){
+            throw new RuntimeException("Korisnicko ime mora imati najmanje 4 karaktera!");
+        }
+        if(userDTO.getPassword() == null || userDTO.getPassword().length() < 6){
+            throw new RuntimeException("Lozinka mora imati najmanje 6 karaktera!");
+        }
         User user = new User();
         user.setUsername(userDTO.getUsername());
         user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
         userRepository.save(user);
-
         String tokenString = jwtTokenProvider.generateToken(user.getUsername());
 
         return tokenString;
-
     }
+
 
     public String login(UserDTO userDTO) {
         User user = userRepository.findByUsername(userDTO.getUsername())
