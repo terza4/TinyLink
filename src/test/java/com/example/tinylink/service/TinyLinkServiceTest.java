@@ -2,11 +2,20 @@ package com.example.tinylink.service;
 
 import com.example.tinylink.entity.UrlMapping;
 import com.example.tinylink.repository.UrlMappingRepository;
+import com.example.tinylink.repository.UserRepository;
+import com.example.tinylink.service.UserService;
+import com.example.tinylink.config.SecurityConfig;
+import com.example.tinylink.security.JwtTokenProvider;
+import com.example.tinylink.dto.UserDTO.UserDTO;
+import com.example.tinylink.entity.User;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 
@@ -21,22 +30,36 @@ public class TinyLinkServiceTest {
     @Mock
     private UrlMappingRepository repo;
 
-   /* @Test
+    @Mock
+    private UserRepository userRepo;
+
+    @InjectMocks
+    private UserService userService;
+
+    @Mock
+    private JwtTokenProvider jwtTokenProvider;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
+    @Test
     void testCreateShortUrl() {
         UrlMapping saved = new UrlMapping();
         saved.setLongUrl("test.www");
+         User username = new User();
+         username.setUsername("test");
 
-        when(repo.findByLongUrl("test.www")).thenReturn(Optional.empty());
+        when(userRepo.findByUsername(anyString())).thenReturn(Optional.of(username));
         when(repo.findByShortCode(anyString())).thenReturn(Optional.empty());
         when(repo.save(any(UrlMapping.class))).thenReturn(saved);
 
-        String result = service.shortenUrl("test.www", username);
+        String result = service.shortenUrl(saved.getLongUrl(), username.getUsername());
 
         assertNotNull(result);
         verify(repo).save(any(UrlMapping.class));
     }
 
-    */
+
 
 
     @Test
@@ -60,6 +83,83 @@ public class TinyLinkServiceTest {
         assertNotNull(result);
         assertEquals(6, result.length());
         assertTrue(result.matches("^[a-zA-Z0-9]+$"));
+    }
+
+    @Test
+    void testGetAllByUsername(){
+        User user = new User();
+        user.setId(2L);
+        user.setUsername("test");
+
+        UrlMapping urlMapping = new UrlMapping();
+        urlMapping.setShortCode("EKt5ro");
+        urlMapping.setUser(user);
+
+        UrlMapping urlMapping1 = new UrlMapping();
+        urlMapping1.setShortCode("h4kNI0");
+        urlMapping1.setUser(user);
+
+        List<UrlMapping> urlMappings = new ArrayList<>();
+        urlMappings.add(urlMapping);
+        urlMappings.add(urlMapping1);
+
+        when(userRepo.findByUsername(anyString())).thenReturn(Optional.of(user));
+        when(repo.findAllByUser(user)).thenReturn(urlMappings);
+
+        List<UrlMapping> urlMappingList = service.getAllByUsername(user.getUsername());
+
+        assertNotNull(urlMappingList);
+        assertEquals(2, urlMappingList.size());
+        verify(repo, times(1)).findAllByUser(user);
+
+    }
+
+
+    // JUnit tests for UserService
+    @Test
+    void testRegisterUser() {
+        UserDTO dto = new UserDTO();
+        dto.setId(1L);
+        dto.setUsername("testUsername");
+        dto.setPassword("testPassword");
+
+        when(userRepo.existsByUsername(dto.getUsername())).thenReturn(false);
+        when(passwordEncoder.encode(dto.getPassword())).thenReturn("hashedPassword");
+        when(jwtTokenProvider.generateToken(dto.getUsername())).thenReturn("mockedToken");
+
+        String token = userService.register(dto);
+
+        assertNotNull(token);
+        assertEquals("mockedToken", token);
+
+        // provjera da li je korisnik sa hesiranom lozinkom sačuvan
+        verify(userRepo).save(argThat(user ->
+                user.getUsername().equals(dto.getUsername()) &&
+                        user.getPassword().equals("hashedPassword")
+        ));
+
+        verify(jwtTokenProvider).generateToken(dto.getUsername());
+    }
+
+    @Test
+    void testLoginUser() {
+        UserDTO dto = new UserDTO();
+        dto.setUsername("testUsername");
+        dto.setPassword("testPassword");
+
+        User user = new User();
+        user.setUsername(dto.getUsername());
+        user.setPassword("hashedPassword");
+
+        when(userRepo.findByUsername(dto.getUsername())).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(dto.getPassword(), user.getPassword())).thenReturn(true);
+        when(jwtTokenProvider.generateToken(dto.getUsername())).thenReturn("mockedToken");
+
+        String token = userService.login(dto);
+
+        assertNotNull(token);
+        assertEquals("mockedToken", token);
+        verify(jwtTokenProvider).generateToken(dto.getUsername());
     }
 
 }
