@@ -31,4 +31,10 @@ public class UrlMapping {
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
+
+    @Column(name = "click_count")
+    private long clickCount;
+
+    @Column(name = "last_accessed")
+    private LocalDateTime lastAccessed;
 }

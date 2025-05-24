@@ -2,6 +2,8 @@ package com.example.tinylink.service;
 
 import com.example.tinylink.entity.UrlMapping;
 import com.example.tinylink.repository.UserRepository;
+import com.example.tinylink.dto.StatsDTO.StatsMapper;
+import com.example.tinylink.dto.StatsDTO.StatsDTO;
 import com.example.tinylink.entity.User;
 import com.example.tinylink.repository.UrlMappingRepository;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +13,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 
 @Service
@@ -55,9 +58,21 @@ public class UrlShortenerService {
     }
 
     public String getLongUrl(String shortCode) {
-        return urlMappingRepository.findByShortCode(shortCode)
-                .map(UrlMapping::getLongUrl)
-                .orElseThrow(() -> new RuntimeException("Not found"));
+        Optional<UrlMapping> mapping = urlMappingRepository.findByShortCode(shortCode);
+
+        UrlMapping urlMapping = mapping.orElseThrow(() -> new RuntimeException("Not found"));
+
+        // ➕ Update tracking podaci
+        urlMapping.setClickCount(urlMapping.getClickCount() + 1);
+        urlMapping.setLastAccessed(LocalDateTime.now());
+
+        // ➕ Sačuvaj promjene
+        urlMappingRepository.save(urlMapping);
+
+        return
+                urlMapping.getLongUrl();
+
+
     }
 
     public String generateRandomCode() {
@@ -74,6 +89,17 @@ public class UrlShortenerService {
                 .orElseThrow(() -> new RuntimeException("Korisnik nije pronađen."));
 
         return urlMappingRepository.findAllByUser(user);
+    }
+
+    public StatsDTO Stats(String shortCode){
+        Optional<UrlMapping> mapping = urlMappingRepository.findByShortCode(shortCode);
+        if(mapping.isPresent()){
+            StatsDTO dto = StatsMapper.statsDto(mapping.get());
+            return dto;
+        }else{
+            throw new RuntimeException("Not found");
+        }
+
     }
 
     public void deleteByShortCode(String shortCode) {

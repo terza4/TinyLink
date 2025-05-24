@@ -25,6 +25,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/{shortCode}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/stats/{shortCode}").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/shorten").permitAll()
                         .anyRequest().authenticated()
                 )
