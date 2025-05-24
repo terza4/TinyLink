@@ -7,6 +7,7 @@ import com.example.tinylink.service.UrlShortenerService;
 import com.example.tinylink.dto.StatsDTO.StatsDTO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
@@ -24,6 +25,9 @@ public class UrlShortenerController {
 
     private final UrlShortenerService urlShortenerService;
 
+    @Value("${tinylink.base-url}")
+    private String baseUrl;
+
     @PostMapping("/shorten")
     public ResponseEntity<ShortenResponse> shorten(@RequestBody ShortenRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -32,15 +36,12 @@ public class UrlShortenerController {
         if (authentication != null && authentication.isAuthenticated()
                 && !(authentication instanceof AnonymousAuthenticationToken)) {
             username = authentication.getName();
-            System.out.println("Ulogovani korisnik: " + username);
-        } else {
-            System.out.println("Anonimni korisnik kreira link");
         }
 
         String shortCode = urlShortenerService.shortenUrl(request.getUrl(), username);
 
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(new ShortenResponse("http://localhost:8080/api/" + shortCode));
+                .body(new ShortenResponse(baseUrl + shortCode));
     }
 
         @GetMapping("/{shortCode}")
@@ -62,7 +63,7 @@ public class UrlShortenerController {
         List<UrlMapping> mappings = urlShortenerService.getAllByUsername(username);
 
         List<ShortenResponse> responses = mappings.stream()
-                .map(mapping -> new ShortenResponse("http://localhost:8080/api/" + mapping.getShortCode()))
+                .map(mapping -> new ShortenResponse(baseUrl + mapping.getShortCode()))
                 .toList();
 
         return ResponseEntity.ok(responses);

@@ -32,6 +32,19 @@ public class UrlShortenerService {
         if (username != null) {
             user = userRepository.findByUsername(username)
                     .orElseThrow(() -> new RuntimeException("Korisnik nije pronađen."));
+            //ako vec je korisnik vec unjeo jednom jedan te isti longUrl vratit ce mu njegov shortCode nece praviti novi
+            Optional<UrlMapping> URL = urlMappingRepository.findByUserAndLongUrl(user, longUrl);
+            if (URL.isPresent()) {
+                return URL.get().getShortCode();
+            }
+
+
+            //ako je username null da se ne pravi novi short codovi ako postoji longUrl da vrati vec od njega shortCode
+        }else if(username == null){
+            UrlMapping u = urlMappingRepository.findByLongUrl(longUrl);
+            if (u != null){
+                return u.getShortCode();
+            }
         }
 
 
