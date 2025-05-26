@@ -29,7 +29,7 @@ public class UrlShortenerController {
     private String baseUrl;
 
     @PostMapping("/shorten")
-    public ResponseEntity<ShortenResponse> shorten(@RequestBody ShortenRequest request) {
+    public ResponseEntity<ShortenResponse> shorten(@RequestBody @Valid ShortenRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         String username = null;
@@ -38,7 +38,7 @@ public class UrlShortenerController {
             username = authentication.getName();
         }
 
-        String shortCode = urlShortenerService.shortenUrl(request.getUrl(), username);
+        String shortCode = urlShortenerService.shortenUrl(request.getShortCodee(), request.getUrl(), username);
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new ShortenResponse(baseUrl + shortCode));
