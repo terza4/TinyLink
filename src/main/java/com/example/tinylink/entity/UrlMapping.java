@@ -37,4 +37,5 @@ public class UrlMapping {
 
     @Column(name = "last_accessed")
     private LocalDateTime lastAccessed;
+
 }

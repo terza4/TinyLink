@@ -7,6 +7,7 @@ import Navbar from './components/Navbar';
 import LoginForm from './components/LoginForm';
 import RegisterForm from './components/RegisterForm';
 import HistoryList from './components/HistoryList';
+import CreateShortCode from './components/CreateShortCode';
 import './App.css';
 
 function App() {
@@ -21,7 +22,17 @@ function App() {
   const [registerPassword, setRegisterPassword] = useState("");
   const [loginUsername, setLoginUsername] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
+  const [shortCode, setShortCode] = useState("");
+  const [showCreateShortCode, setShowCreateShortCode] = useState(false);
+  const [createCode, setCreateCode] = useState("");
   const [history, setHistory] = useState([]);
+
+  //funckija koja dodaje shortCode u App.js
+  const handleCreateCode = () => {
+    setShortCode(createCode); // ubacivanje koda iz modala u glavni shortCode state
+    setCreateCode(""); // restart unosa
+  };
+
 
   // dohvaćanje historije
   const fetchHistory = async () => {
@@ -102,16 +113,21 @@ function App() {
       return;
     }
 
+    //Pri slanju URL-a provjerava se da li postoji i shortCode ako ne postoji salje se samo longUrl
+    const requestBody = { url: longUrl };
+    if (shortCode) {
+      requestBody.shortCodee = shortCode;
+    }
+
     try {
-      const response = await axios.post('http://localhost:8080/api/shorten', {
-        url: longUrl
-      }, token ? {
+      const response = await axios.post('http://localhost:8080/api/shorten', requestBody, token ? {
         headers: {
           Authorization: `Bearer ${token}`
         }
       } : {});
 
       setShortUrl(response.data.shortUrl);
+      setShortCode(""); // 🧹 reset shortCode nakon slanja
 
 
           if (token) {
@@ -188,6 +204,17 @@ function App() {
       {/* Historija linkova */}
       {showHistory && <HistoryList history={history}  onCopy={handleCopy} onDelete={handleDelete}/>}
 
+      {/* prosljedjivanje shortCoda */}
+      {showCreateShortCode && (
+        <CreateShortCode
+          handleCreateCode={handleCreateCode}
+          createCode={createCode}
+          setCreateCode={setCreateCode}
+          setShowCreateShortCode={setShowCreateShortCode}
+        />
+      )}
+
+
       {/* URL Shortener forma */}
       <div className="container">
         <h2>URL Shortener</h2>
@@ -196,7 +223,17 @@ function App() {
           setLongUrl={setLongUrl}
           onSubmit={handleSubmit}
           isValid={isValidUrl}
+          shortCode={shortCode}
+          setShowCreateShortCode={setShowCreateShortCode}
         />
+
+        {/* Prikazivanje trenutno aktivnog short coda ako postoji */}
+        {shortCode && (
+          <p style={{ marginTop: '10px' }}>
+            Using custom short code: <strong>{shortCode}</strong>
+          </p>
+        )}
+
         <ShortenedResult shortUrl={shortUrl} onCopy={handleCopy} />
         {error && <p className="error">{error}</p>}
       </div>
