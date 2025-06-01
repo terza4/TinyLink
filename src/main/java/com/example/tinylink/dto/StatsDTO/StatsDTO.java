@@ -8,8 +8,9 @@ import java.time.LocalDateTime;
 @Setter
 public class StatsDTO {
     private String longUrl;
-    private String shortUrl;
+    private String shortCode;
     private LocalDateTime creationDate;
     private long clickCount;
     private LocalDateTime lastAccessed;
+
 }

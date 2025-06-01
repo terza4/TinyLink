@@ -1,5 +1,6 @@
 package com.example.tinylink.service;
 
+import com.example.tinylink.dto.LinkDTO.HistoryResponse;
 import com.example.tinylink.entity.UrlMapping;
 import com.example.tinylink.repository.UserRepository;
 import com.example.tinylink.dto.StatsDTO.StatsMapper;

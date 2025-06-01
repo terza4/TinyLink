@@ -6,10 +6,11 @@ public class StatsMapper {
     public static StatsDTO statsDto(UrlMapping urlMapping){
         StatsDTO dto = new StatsDTO();
         dto.setLongUrl(urlMapping.getLongUrl());
-        dto.setShortUrl(urlMapping.getShortCode());
+        dto.setShortCode(urlMapping.getShortCode());
         dto.setCreationDate(urlMapping.getCreationDate());
         dto.setClickCount(urlMapping.getClickCount());
         dto.setLastAccessed(urlMapping.getLastAccessed());
         return dto;
     }
+
 }

@@ -35,14 +35,16 @@ const HistoryList = ({ history, onCopy, onDelete }) => {
             }}
           >
             {/* Link */}
-            <a href={item.shortUrl} target="_blank" rel="noopener noreferrer">
-              {item.shortUrl}
+            <a href={item.shortCode} target="_blank" rel="noopener noreferrer">
+              {item.shortCode}
             </a>
+
 
             {/* Dugmad sa desne strane */}
             <div style={{ display: 'flex', gap: '5px' }}>
-              <button onClick={() => onCopy(item.shortUrl)}>Copy</button>
-              <button onClick={() => onDelete(extractShortCode(item.shortUrl))}>Delete</button>
+              <p>{item.clickCount}</p>
+              <button onClick={() => onCopy(item.shortCode)}>Copy</button>
+              <button onClick={() => onDelete(extractShortCode(item.shortCode))}>Delete</button>
             </div>
           </li>
         ))}

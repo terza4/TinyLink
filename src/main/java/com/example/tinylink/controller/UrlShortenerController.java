@@ -2,6 +2,7 @@ package com.example.tinylink.controller;
 
 import com.example.tinylink.dto.LinkDTO.ShortenRequest;
 import com.example.tinylink.dto.LinkDTO.ShortenResponse;
+import com.example.tinylink.dto.LinkDTO.HistoryResponse;
 import com.example.tinylink.entity.UrlMapping;
 import com.example.tinylink.service.UrlShortenerService;
 import com.example.tinylink.dto.StatsDTO.StatsDTO;
@@ -51,7 +52,7 @@ public class UrlShortenerController {
         }
 
     @GetMapping("/history")
-    public ResponseEntity<List<ShortenResponse>> getUserHistory() {
+    public ResponseEntity<List<HistoryResponse>> getUserHistory() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || !authentication.isAuthenticated()
@@ -62,9 +63,11 @@ public class UrlShortenerController {
         String username = authentication.getName();
         List<UrlMapping> mappings = urlShortenerService.getAllByUsername(username);
 
-        List<ShortenResponse> responses = mappings.stream()
-                .map(mapping -> new ShortenResponse(baseUrl + mapping.getShortCode()))
+        List<HistoryResponse> responses = mappings.stream()
+                .map(mapping -> new HistoryResponse(baseUrl + mapping.getShortCode(), mapping.getClickCount()))
                 .toList();
+
+
 
         return ResponseEntity.ok(responses);
     }
