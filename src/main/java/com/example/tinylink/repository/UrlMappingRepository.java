@@ -13,4 +13,5 @@ public interface UrlMappingRepository extends JpaRepository<UrlMapping, Long> {
     UrlMapping findByLongUrl(String longUrl);
     Optional<UrlMapping> findByUserAndLongUrl(User user, String longUrl);
 
+
 }

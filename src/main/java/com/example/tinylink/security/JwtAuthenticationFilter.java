@@ -1,46 +1,61 @@
 package com.example.tinylink.security;
 
-import jakarta.servlet.*;
-import jakarta.servlet.http.*;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Collections;
+import java.util.List;
 
 @Component
-public class JwtAuthenticationFilter extends GenericFilter {
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
 
+    @Autowired
+    private UserDetailsServiceImpl userDetailsService;
 
     @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
-            throws IOException, ServletException {
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain) throws ServletException, IOException {
 
-        HttpServletRequest httpRequest = (HttpServletRequest) request;
+        String token = getTokenFromRequest(request);
 
+        if (token != null && jwtTokenProvider.validateToken(token)) {
+            String username = jwtTokenProvider.getUsernameFromToken(token);
+            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
-        String header = httpRequest.getHeader("Authorization");
+            List<String> roles = jwtTokenProvider.extractRoles(token);
+            List<SimpleGrantedAuthority> authorities = roles.stream()
+                    .map(SimpleGrantedAuthority::new)
+                    .toList();
 
+            UsernamePasswordAuthenticationToken authentication =
+                    new UsernamePasswordAuthenticationToken(userDetails, null, authorities);
+            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-        if (header != null && header.startsWith("Bearer ")) {
-            String token = header.substring(7);
-
-
-            if (jwtTokenProvider.validateToken(token)) {
-                    String username = jwtTokenProvider.getUsernameFromToken(token);
-                    UsernamePasswordAuthenticationToken auth =
-                            new UsernamePasswordAuthenticationToken(username, null, Collections.emptyList());
-                    auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(httpRequest));
-                    SecurityContextHolder.getContext().setAuthentication(auth);
-            }
+            SecurityContextHolder.getContext().setAuthentication(authentication);
         }
 
-        chain.doFilter(request, response);
+        filterChain.doFilter(request, response);
+    }
+
+    private String getTokenFromRequest(HttpServletRequest request) {
+        String bearer = request.getHeader("Authorization");
+        if (bearer != null && bearer.startsWith("Bearer ")) {
+            return bearer.substring(7);
+        }
+        return null;
     }
 }

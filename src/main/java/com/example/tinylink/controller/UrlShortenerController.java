@@ -4,6 +4,7 @@ import com.example.tinylink.dto.LinkDTO.ShortenRequest;
 import com.example.tinylink.dto.LinkDTO.ShortenResponse;
 import com.example.tinylink.dto.LinkDTO.HistoryResponse;
 import com.example.tinylink.entity.UrlMapping;
+import com.example.tinylink.entity.User;
 import com.example.tinylink.service.UrlShortenerService;
 import com.example.tinylink.dto.StatsDTO.StatsDTO;
 import jakarta.validation.Valid;

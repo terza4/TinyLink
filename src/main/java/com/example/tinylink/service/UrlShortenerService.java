@@ -42,8 +42,8 @@ public class UrlShortenerService {
 
             //ako je username null da se ne pravi novi short codovi ako postoji longUrl da vrati vec od njega shortCode
         }else if(username == null){
-            Optional<UrlMapping> u = urlMappingRepository.findByUserAndLongUrl(user, longUrl);
-            if (u.get().getUser() == null && longUrl != null){
+            Optional<UrlMapping> u = urlMappingRepository.findByUserAndLongUrl(null, longUrl);
+            if (u.isPresent() && u.get().getUser() == null && longUrl != null){
                 return u.get().getShortCode();
             }
         }

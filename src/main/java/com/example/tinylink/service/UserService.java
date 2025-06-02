@@ -7,6 +7,8 @@ import com.example.tinylink.security.JwtTokenProvider;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Set;
+
 @Service
 public class UserService {
 
@@ -34,8 +36,9 @@ public class UserService {
         User user = new User();
         user.setUsername(userDTO.getUsername());
         user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+        user.setRoles(Set.of("ROLE_USER"));
         userRepository.save(user);
-        String tokenString = jwtTokenProvider.generateToken(user.getUsername());
+        String tokenString = jwtTokenProvider.generateToken(user);
 
         return tokenString;
     }
@@ -49,7 +52,7 @@ public class UserService {
             throw new RuntimeException("Pogrešna lozinka.");
         }
 
-        String tokenString = jwtTokenProvider.generateToken(user.getUsername());
+        String tokenString = jwtTokenProvider.generateToken(user);
 
 
         return tokenString;
