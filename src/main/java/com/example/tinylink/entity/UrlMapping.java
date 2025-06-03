@@ -38,4 +38,7 @@ public class UrlMapping {
     @Column(name = "last_accessed")
     private LocalDateTime lastAccessed;
 
+    @Column(name = "expiry_date")
+    private LocalDateTime expiryDate;
+
 }

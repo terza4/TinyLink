@@ -8,6 +8,7 @@ import LoginForm from './components/LoginForm';
 import RegisterForm from './components/RegisterForm';
 import HistoryList from './components/HistoryList';
 import CreateShortCode from './components/CreateShortCode';
+import CreateExpiryDate from './components/CreateExpiryDate';
 import './App.css';
 
 function App() {
@@ -25,6 +26,10 @@ function App() {
   const [shortCode, setShortCode] = useState("");
   const [showCreateShortCode, setShowCreateShortCode] = useState(false);
   const [createCode, setCreateCode] = useState("");
+
+  const [expiryDate, setExpiryDate] = useState("");
+  const [showCreateExpiryDate, setShowCreateExpiryDate] = useState(false);
+  const [createExpiryDate, setCreateExpiryDate] = useState("");
   const [history, setHistory] = useState([]);
 
   //funckija koja dodaje shortCode u App.js
@@ -32,6 +37,11 @@ function App() {
     setShortCode(createCode); // ubacivanje koda iz modala u glavni shortCode state
     setCreateCode(""); // restart unosa
   };
+
+  const handleExpiryDate = () => {
+      setExpiryDate(createExpiryDate); // ubacivanje datuma iz modala u glavni expiryDate state
+      setCreateExpiryDate(""); // restart unosa
+    };
 
 
   // dohvaćanje historije
@@ -118,6 +128,9 @@ function App() {
     if (shortCode) {
       requestBody.shortCodee = shortCode;
     }
+    if(expiryDate){
+      requestBody.expiryDate = expiryDate;
+    }
 
     try {
       const response = await axios.post('http://localhost:8080/api/shorten', requestBody, token ? {
@@ -128,6 +141,7 @@ function App() {
 
       setShortUrl(response.data.shortUrl);
       setShortCode(""); // 🧹 reset shortCode nakon slanja
+      setExpiryDate("");
 
 
           if (token) {
@@ -214,6 +228,16 @@ function App() {
         />
       )}
 
+      {/* prosljedjivanje expiryDate */}
+            {showCreateExpiryDate && (
+              <CreateExpiryDate
+                handleExpiryDate={handleExpiryDate}
+                createExpiryDate={createExpiryDate}
+                setCreateExpiryDate={setCreateExpiryDate}
+                setShowCreateExpiryDate={setShowCreateExpiryDate}
+              />
+            )}
+
 
       {/* URL Shortener forma */}
       <div className="container">
@@ -225,6 +249,8 @@ function App() {
           isValid={isValidUrl}
           shortCode={shortCode}
           setShowCreateShortCode={setShowCreateShortCode}
+          expiryDate={expiryDate}
+          setShowCreateExpiryDate={setShowCreateExpiryDate}
         />
 
         {/* Prikazivanje trenutno aktivnog short coda ako postoji */}
@@ -233,6 +259,13 @@ function App() {
             Using custom short code: <strong>{shortCode}</strong>
           </p>
         )}
+
+        {/* Prikazivanje trenutno aktivnog short coda ako postoji */}
+                {expiryDate && (
+                  <p style={{ marginTop: '10px' }}>
+                    Using custom expiry date: <strong>{expiryDate}</strong>
+                  </p>
+                )}
 
         <ShortenedResult shortUrl={shortUrl} onCopy={handleCopy} />
         {error && <p className="error">{error}</p>}

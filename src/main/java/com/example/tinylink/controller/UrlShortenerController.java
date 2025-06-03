@@ -40,7 +40,7 @@ public class UrlShortenerController {
             username = authentication.getName();
         }
 
-        String shortCode = urlShortenerService.shortenUrl(request.getShortCodee(), request.getUrl(), username);
+        String shortCode = urlShortenerService.shortenUrl(request.getShortCodee(), request.getUrl(), request.getExpiryDate(), username);
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new ShortenResponse(baseUrl + shortCode));

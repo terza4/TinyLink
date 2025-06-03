@@ -53,7 +53,7 @@ public class TinyLinkServiceTest {
         when(repo.findByShortCode(anyString())).thenReturn(Optional.empty());
         when(repo.save(any(UrlMapping.class))).thenReturn(saved);
 
-        String result = service.shortenUrl(saved.getShortCode(), saved.getLongUrl(), username.getUsername());
+        String result = service.shortenUrl(saved.getShortCode(), saved.getLongUrl(), saved.getExpiryDate(), username.getUsername());
 
         assertNotNull(result);
         verify(repo).save(any(UrlMapping.class));

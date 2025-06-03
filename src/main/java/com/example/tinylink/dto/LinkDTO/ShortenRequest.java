@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.validator.constraints.URL;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Setter
 public class ShortenRequest {
@@ -14,4 +16,6 @@ public class ShortenRequest {
 
     @Pattern(regexp = "^[a-zA-Z0-9]{4,10}$", message = "Short code mora imati 4-10 slova ili brojeva")
     private String shortCodee;
+
+    private LocalDateTime expiryDate;
 }
