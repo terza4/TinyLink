@@ -1,4 +1,5 @@
 import React, { useContext, useState } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthContext } from "./context/AuthContext";
 import axios from 'axios';
 import UrlForm from './components/UrlForm';
@@ -9,10 +10,12 @@ import RegisterForm from './components/RegisterForm';
 import HistoryList from './components/HistoryList';
 import CreateShortCode from './components/CreateShortCode';
 import CreateExpiryDate from './components/CreateExpiryDate';
+import { jwtDecode } from "jwt-decode";
+import AdminPanel from './components/AdminPanel';
 import './App.css';
 
 function App() {
-  const { token, login, logout } = useContext(AuthContext);
+  const { token, login, logout, isAdmin } = useContext(AuthContext);
   const [showLogin, setShowLogin] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -30,6 +33,8 @@ function App() {
   const [expiryDate, setExpiryDate] = useState("");
   const [showCreateExpiryDate, setShowCreateExpiryDate] = useState(false);
   const [createExpiryDate, setCreateExpiryDate] = useState("");
+  const [setIsAdmin] = useState(false);
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [history, setHistory] = useState([]);
 
   //funckija koja dodaje shortCode u App.js
@@ -37,7 +42,7 @@ function App() {
     setShortCode(createCode); // ubacivanje koda iz modala u glavni shortCode state
     setCreateCode(""); // restart unosa
   };
-
+ //funkcija koja dodaje datum isteka
   const handleExpiryDate = () => {
       setExpiryDate(createExpiryDate); // ubacivanje datuma iz modala u glavni expiryDate state
       setCreateExpiryDate(""); // restart unosa
@@ -90,6 +95,7 @@ function App() {
       const newToken = response.data.replace("Bearer ", "");
       login(newToken);
       setShowLogin(false);
+
       alert("Uspješno prijavljeni!");
     } catch (err) {
       const errorMessage = err.response?.data?.message || err.response?.data || "Greška prilikom logina";
@@ -179,8 +185,7 @@ function App() {
 
 
   return (
-    <>
-      {/* Dugmadi Register, Login, History, Logout */}
+    <Router>
       <Navbar
         token={token}
         setShowRegister={setShowRegister}
@@ -189,90 +194,102 @@ function App() {
         showHistory={showHistory}
         fetchHistory={fetchHistory}
         logout={logout}
+        isAdmin={isAdmin}
+        setShowAdminPanel={setShowAdminPanel}
       />
 
-      {/* Login forma */}
-      {showLogin && (
-        <LoginForm
-          handleLogin={handleLogin}
-          loginUsername={loginUsername}
-          setLoginUsername={setLoginUsername}
-          loginPassword={loginPassword}
-          setLoginPassword={setLoginPassword}
-          setShowLogin={setShowLogin}
-        />
-      )}
+      <Routes>
+        {/* Početna stranica */}
+        <Route
+          path="/"
+          element={
+            <>
+              {showLogin && (
+                <LoginForm
+                  handleLogin={handleLogin}
+                  loginUsername={loginUsername}
+                  setLoginUsername={setLoginUsername}
+                  loginPassword={loginPassword}
+                  setLoginPassword={setLoginPassword}
+                  setShowLogin={setShowLogin}
+                />
+              )}
 
-      {/* Register forma */}
-      {showRegister && (
-        <RegisterForm
-          handleRegister={handleRegister}
-          registerUsername={registerUsername}
-          setRegisterUsername={setRegisterUsername}
-          registerPassword={registerPassword}
-          setRegisterPassword={setRegisterPassword}
-          setShowRegister={setShowRegister}
-        />
-      )}
+              {showRegister && (
+                <RegisterForm
+                  handleRegister={handleRegister}
+                  registerUsername={registerUsername}
+                  setRegisterUsername={setRegisterUsername}
+                  registerPassword={registerPassword}
+                  setRegisterPassword={setRegisterPassword}
+                  setShowRegister={setShowRegister}
+                />
+              )}
 
-      {/* Historija linkova */}
-      {showHistory && <HistoryList history={history}  onCopy={handleCopy} onDelete={handleDelete}/>}
+              {showHistory && (
+                <HistoryList
+                  history={history}
+                  onCopy={handleCopy}
+                  onDelete={handleDelete}
+                />
+              )}
 
-      {/* prosljedjivanje shortCoda */}
-      {showCreateShortCode && (
-        <CreateShortCode
-          handleCreateCode={handleCreateCode}
-          createCode={createCode}
-          setCreateCode={setCreateCode}
-          setShowCreateShortCode={setShowCreateShortCode}
-        />
-      )}
+              {showCreateShortCode && (
+                <CreateShortCode
+                  handleCreateCode={handleCreateCode}
+                  createCode={createCode}
+                  setCreateCode={setCreateCode}
+                  setShowCreateShortCode={setShowCreateShortCode}
+                />
+              )}
 
-      {/* prosljedjivanje expiryDate */}
-            {showCreateExpiryDate && (
-              <CreateExpiryDate
-                handleExpiryDate={handleExpiryDate}
-                createExpiryDate={createExpiryDate}
-                setCreateExpiryDate={setCreateExpiryDate}
-                setShowCreateExpiryDate={setShowCreateExpiryDate}
-              />
-            )}
+              {showCreateExpiryDate && (
+                <CreateExpiryDate
+                  handleExpiryDate={handleExpiryDate}
+                  createExpiryDate={createExpiryDate}
+                  setCreateExpiryDate={setCreateExpiryDate}
+                  setShowCreateExpiryDate={setShowCreateExpiryDate}
+                />
+              )}
 
+              <div className="container">
+                <h2>URL Shortener</h2>
+                <UrlForm
+                  longUrl={longUrl}
+                  setLongUrl={setLongUrl}
+                  onSubmit={handleSubmit}
+                  isValid={isValidUrl}
+                  shortCode={shortCode}
+                  setShowCreateShortCode={setShowCreateShortCode}
+                  expiryDate={expiryDate}
+                  setShowCreateExpiryDate={setShowCreateExpiryDate}
+                />
 
-      {/* URL Shortener forma */}
-      <div className="container">
-        <h2>URL Shortener</h2>
-        <UrlForm
-          longUrl={longUrl}
-          setLongUrl={setLongUrl}
-          onSubmit={handleSubmit}
-          isValid={isValidUrl}
-          shortCode={shortCode}
-          setShowCreateShortCode={setShowCreateShortCode}
-          expiryDate={expiryDate}
-          setShowCreateExpiryDate={setShowCreateExpiryDate}
-        />
+                {shortCode && (
+                  <p style={{ marginTop: '10px' }}>
+                    Using custom short code: <strong>{shortCode}</strong>
+                  </p>
+                )}
 
-        {/* Prikazivanje trenutno aktivnog short coda ako postoji */}
-        {shortCode && (
-          <p style={{ marginTop: '10px' }}>
-            Using custom short code: <strong>{shortCode}</strong>
-          </p>
-        )}
-
-        {/* Prikazivanje trenutno aktivnog short coda ako postoji */}
                 {expiryDate && (
                   <p style={{ marginTop: '10px' }}>
                     Using custom expiry date: <strong>{expiryDate}</strong>
                   </p>
                 )}
 
-        <ShortenedResult shortUrl={shortUrl} onCopy={handleCopy} />
-        {error && <p className="error">{error}</p>}
-      </div>
-    </>
+                <ShortenedResult shortUrl={shortUrl} onCopy={handleCopy} />
+                {error && <p className="error">{error}</p>}
+              </div>
+            </>
+          }
+        />
+
+        {/* Admin Panel */}
+        <Route path="/admin" element={<AdminPanel token={token} />} />
+      </Routes>
+    </Router>
   );
-}
+  }
 
 export default App;
 
