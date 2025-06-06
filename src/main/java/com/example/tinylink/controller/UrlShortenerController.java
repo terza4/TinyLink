@@ -7,6 +7,7 @@ import com.example.tinylink.entity.UrlMapping;
 import com.example.tinylink.entity.User;
 import com.example.tinylink.service.UrlShortenerService;
 import com.example.tinylink.dto.StatsDTO.StatsDTO;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,6 +32,7 @@ public class UrlShortenerController {
     private String baseUrl;
 
     @PostMapping("/shorten")
+    @RateLimiter(name = "shortenUrl")
     public ResponseEntity<ShortenResponse> shorten(@RequestBody @Valid ShortenRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 

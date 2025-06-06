@@ -7,7 +7,9 @@ import com.example.tinylink.dto.StatsDTO.StatsMapper;
 import com.example.tinylink.dto.StatsDTO.StatsDTO;
 import com.example.tinylink.entity.User;
 import com.example.tinylink.repository.UrlMappingRepository;
+import org.springframework.cache.annotation.Cacheable;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -96,6 +98,7 @@ public class UrlShortenerService {
         return shortCode;
     }
 
+    @Cacheable(value = "shortLinks", key = "#shortCode")
     public String getLongUrl(String shortCode) {
         Optional<UrlMapping> mapping = urlMappingRepository.findByShortCode(shortCode);
 
@@ -141,6 +144,7 @@ public class UrlShortenerService {
 
     }
 
+    @CacheEvict(value = "shortLinks", key = "#shortCode")
     public void deleteByShortCode(String shortCode) {
         UrlMapping urlMapping = urlMappingRepository.findByShortCode(shortCode)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Link not found"));
