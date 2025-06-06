@@ -13,6 +13,8 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -25,20 +27,28 @@ public class UrlShortenerService {
 
     private final UrlMappingRepository urlMappingRepository;
     private final UserRepository userRepository;
+    private static final Logger logger = LoggerFactory.getLogger(UrlShortenerService.class);
 
     private static final String ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private static final int SHORTCODE_LENGTH = 6;
     private final Random random = new Random();
 
     public String shortenUrl(String shortCodee, String longUrl, LocalDateTime expiryDate, String username) {
+        logger.info("Poziv getLongUrl sa shortCode: {}", shortCodee);
+
+
         User user = null;
         if (username != null) {
             user = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new RuntimeException("Korisnik nije pronađen."));
+                    .orElseThrow(() -> {
+                        logger.error("Korisnik '{}' nije pronađen!", username);
+                        return new RuntimeException("Korisnik nije pronađen.");
+                    });
 
             // Provjera da li već postoji aktivni URL
             Optional<UrlMapping> existing = urlMappingRepository.findByUserAndLongUrl(user, longUrl);
             if (existing.isPresent()) {
+                logger.info(" URL već postoji za korisnika {} — vraćam postojeći shortCode.", username);
                 UrlMapping existingUrl = existing.get();
                 if (existingUrl.getExpiryDate() == null || existingUrl.getExpiryDate().isAfter(LocalDateTime.now())) {
                     return existingUrl.getShortCode(); // još nije istekao
@@ -50,6 +60,7 @@ public class UrlShortenerService {
         } else {
             Optional<UrlMapping> u = urlMappingRepository.findByUserAndLongUrl(null, longUrl);
             if (u.isPresent()) {
+                logger.info("Gost već ima skraćeni URL — vraćam postojeći shortCode.");
                 UrlMapping url = u.get();
                 if ((url.getExpiryDate() == null || url.getExpiryDate().isAfter(LocalDateTime.now())) && longUrl != null) {
                     return url.getShortCode();
@@ -60,6 +71,7 @@ public class UrlShortenerService {
         }
 
         if (longUrl == null || longUrl.isBlank()) {
+            logger.warn("Pokušaj skraćivanja praznog URL-a.");
             throw new IllegalArgumentException("URL ne smije biti prazan.");
         }
 
@@ -68,11 +80,13 @@ public class UrlShortenerService {
         // Ako korisnik želi da unese custom shortCode
         if (shortCodee != null && !shortCodee.isBlank()) {
             if (!shortCodee.matches("^[a-zA-Z0-9]{4,10}$")) {
+                logger.warn("Nevažeći shortCode unesen: {}", shortCodee);
                 throw new IllegalArgumentException("Short code mora imati 4-10 slova ili brojeva");
             }
 
             Optional<UrlMapping> shortCode2 = urlMappingRepository.findByShortCode(shortCodee);
             if (shortCode2.isPresent()) {
+                logger.warn(" Pokušaj korištenja već postojećeg shortCoda: {}", shortCodee);
                 throw new IllegalArgumentException("Short code već postoji!");
             } else {
                 shortCode = shortCodee;
@@ -95,6 +109,7 @@ public class UrlShortenerService {
                 .build();
 
         urlMappingRepository.save(newMapping);
+        logger.info("Skraćen URL sa shortCode={} za korisnika={}", shortCode, username != null ? username : "gost");
         return shortCode;
     }
 

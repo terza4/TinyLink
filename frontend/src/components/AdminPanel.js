@@ -64,6 +64,46 @@ const AdminPanel = ({ token }) => {
     }
   };
 
+  const fetchHealth = async () => {
+     try {
+       const res = await axios.get("http://localhost:8080/actuator/health", { headers });
+       setOutput(JSON.stringify(res.data, null, 2));
+     } catch (error) {
+       console.error("Greška pri dohvaćanju Healtha:", error);
+       setOutput("Greška: " + (error.response?.data?.message || error.message));
+     }
+   };
+
+   const fetchMetrics = async () => {
+        try {
+          const res = await axios.get("http://localhost:8080/actuator/metrics", { headers });
+          setOutput(JSON.stringify(res.data, null, 2));
+        } catch (error) {
+          console.error("Greška pri dohvaćanju Metricsa:", error);
+          setOutput("Greška: " + (error.response?.data?.message || error.message));
+        }
+      };
+
+      const fetchCaches = async () => {
+           try {
+             const res = await axios.get("http://localhost:8080/actuator/caches", { headers });
+             setOutput(JSON.stringify(res.data, null, 2));
+           } catch (error) {
+             console.error("Greška pri dohvaćanju Caches:", error);
+             setOutput("Greška: " + (error.response?.data?.message || error.message));
+           }
+         };
+
+         const fetchLoggers = async () => {
+              try {
+                const res = await axios.get("http://localhost:8080/actuator/loggers", { headers });
+                setOutput(JSON.stringify(res.data, null, 2));
+              } catch (error) {
+                console.error("Greška pri dohvaćanju Loggersa:", error);
+                setOutput("Greška: " + (error.response?.data?.message || error.message));
+              }
+            };
+
   return (
     <div style={{ padding: "20px", border: "1px solid gray", margin: "20px" }}>
       <h2>Admin Panel</h2>
@@ -73,6 +113,11 @@ const AdminPanel = ({ token }) => {
       <button onClick={fetchUserById}>Pronađi korisnika po ID-u</button>
       <button onClick={deleteUserById}>Obriši korisnika po ID-u</button>
       <button onClick={deleteUrlByCode}>Obriši URL po kodu</button>
+
+      <button onClick={fetchHealth}>Health</button>
+      <button onClick={fetchMetrics}>Metrics</button>
+      <button onClick={fetchCaches}>Caches</button>
+      <button onClick={fetchLoggers}>Loggers</button>
       <pre style={{ backgroundColor: "#eee", padding: "10px", marginTop: "20px", whiteSpace: "pre-wrap" }}>
         {output}
       </pre>
