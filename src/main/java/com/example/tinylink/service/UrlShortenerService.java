@@ -1,16 +1,24 @@
 package com.example.tinylink.service;
 
+import com.example.tinylink.dto.LinkDTO.HistoryResponse;
 import com.example.tinylink.entity.UrlMapping;
 import com.example.tinylink.repository.UserRepository;
+import com.example.tinylink.dto.StatsDTO.StatsMapper;
+import com.example.tinylink.dto.StatsDTO.StatsDTO;
 import com.example.tinylink.entity.User;
 import com.example.tinylink.repository.UrlMappingRepository;
+import org.springframework.cache.annotation.Cacheable;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 
 @Service
@@ -19,45 +27,109 @@ public class UrlShortenerService {
 
     private final UrlMappingRepository urlMappingRepository;
     private final UserRepository userRepository;
+    private static final Logger logger = LoggerFactory.getLogger(UrlShortenerService.class);
 
     private static final String ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private static final int SHORTCODE_LENGTH = 6;
     private final Random random = new Random();
 
-    public String shortenUrl(String longUrl, String username) {
+    public String shortenUrl(String shortCodee, String longUrl, LocalDateTime expiryDate, String username) {
+        logger.info("Poziv getLongUrl sa shortCode: {}", shortCodee);
+
+
         User user = null;
         if (username != null) {
             user = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new RuntimeException("Korisnik nije pronađen."));
+                    .orElseThrow(() -> {
+                        logger.error("Korisnik '{}' nije pronađen!", username);
+                        return new RuntimeException("Korisnik nije pronađen.");
+                    });
+
+            // Provjera da li već postoji aktivni URL
+            Optional<UrlMapping> existing = urlMappingRepository.findByUserAndLongUrl(user, longUrl);
+            if (existing.isPresent()) {
+                logger.info(" URL već postoji za korisnika {} — vraćam postojeći shortCode.", username);
+                UrlMapping existingUrl = existing.get();
+                if (existingUrl.getExpiryDate() == null || existingUrl.getExpiryDate().isAfter(LocalDateTime.now())) {
+                    return existingUrl.getShortCode(); // još nije istekao
+                } else {
+                    urlMappingRepository.delete(existingUrl); // istekao -> obriši
+                }
+            }
+
+        } else {
+            Optional<UrlMapping> u = urlMappingRepository.findByUserAndLongUrl(null, longUrl);
+            if (u.isPresent()) {
+                logger.info("Gost već ima skraćeni URL — vraćam postojeći shortCode.");
+                UrlMapping url = u.get();
+                if ((url.getExpiryDate() == null || url.getExpiryDate().isAfter(LocalDateTime.now())) && longUrl != null) {
+                    return url.getShortCode();
+                } else {
+                    urlMappingRepository.delete(url); // obriši ako je istekao
+                }
+            }
         }
 
-
         if (longUrl == null || longUrl.isBlank()) {
+            logger.warn("Pokušaj skraćivanja praznog URL-a.");
             throw new IllegalArgumentException("URL ne smije biti prazan.");
         }
 
+        String shortCode = null;
 
-        String shortCode;
-        do {
-            shortCode = generateRandomCode();
-        } while (urlMappingRepository.findByShortCode(shortCode).isPresent());
+        // Ako korisnik želi da unese custom shortCode
+        if (shortCodee != null && !shortCodee.isBlank()) {
+            if (!shortCodee.matches("^[a-zA-Z0-9]{4,10}$")) {
+                logger.warn("Nevažeći shortCode unesen: {}", shortCodee);
+                throw new IllegalArgumentException("Short code mora imati 4-10 slova ili brojeva");
+            }
+
+            Optional<UrlMapping> shortCode2 = urlMappingRepository.findByShortCode(shortCodee);
+            if (shortCode2.isPresent()) {
+                logger.warn(" Pokušaj korištenja već postojećeg shortCoda: {}", shortCodee);
+                throw new IllegalArgumentException("Short code već postoji!");
+            } else {
+                shortCode = shortCodee;
+            }
+        }
+
+        // Generiši random short code ako nije unesen
+        if (shortCode == null) {
+            do {
+                shortCode = generateRandomCode();
+            } while (urlMappingRepository.findByShortCode(shortCode).isPresent());
+        }
 
         UrlMapping newMapping = UrlMapping.builder()
                 .longUrl(longUrl)
                 .shortCode(shortCode)
                 .creationDate(LocalDateTime.now())
+                .expiryDate(expiryDate)
                 .user(user)
                 .build();
 
         urlMappingRepository.save(newMapping);
-
+        logger.info("Skraćen URL sa shortCode={} za korisnika={}", shortCode, username != null ? username : "gost");
         return shortCode;
     }
 
+    @Cacheable(value = "shortLinks", key = "#shortCode")
     public String getLongUrl(String shortCode) {
-        return urlMappingRepository.findByShortCode(shortCode)
-                .map(UrlMapping::getLongUrl)
-                .orElseThrow(() -> new RuntimeException("Not found"));
+        Optional<UrlMapping> mapping = urlMappingRepository.findByShortCode(shortCode);
+
+        UrlMapping urlMapping = mapping.orElseThrow(() -> new RuntimeException("Not found"));
+
+        // ➕ Update tracking podaci
+        urlMapping.setClickCount(urlMapping.getClickCount() + 1);
+        urlMapping.setLastAccessed(LocalDateTime.now());
+
+        // ➕ Sačuvaj promjene
+        urlMappingRepository.save(urlMapping);
+
+        return
+                urlMapping.getLongUrl();
+
+
     }
 
     public String generateRandomCode() {
@@ -76,6 +148,18 @@ public class UrlShortenerService {
         return urlMappingRepository.findAllByUser(user);
     }
 
+    public StatsDTO Stats(String shortCode){
+        Optional<UrlMapping> mapping = urlMappingRepository.findByShortCode(shortCode);
+        if(mapping.isPresent()){
+            StatsDTO dto = StatsMapper.statsDto(mapping.get());
+            return dto;
+        }else{
+            throw new RuntimeException("Not found");
+        }
+
+    }
+
+    @CacheEvict(value = "shortLinks", key = "#shortCode")
     public void deleteByShortCode(String shortCode) {
         UrlMapping urlMapping = urlMappingRepository.findByShortCode(shortCode)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Link not found"));

@@ -1,6 +1,6 @@
 import React from 'react';
 
-const UrlForm = ({ longUrl, setLongUrl, onSubmit, isValid }) => {
+const UrlForm = ({ longUrl, setLongUrl, onSubmit, isValid, shortCode, setShowCreateShortCode, expiryDate, setShowCreateExpiryDate }) => {
   return (
     <form onSubmit={onSubmit}>
       <input
@@ -10,6 +10,8 @@ const UrlForm = ({ longUrl, setLongUrl, onSubmit, isValid }) => {
         onChange={(e) => setLongUrl(e.target.value)}
       />
       <button type="submit" disabled={!isValid(longUrl)}>Shorten</button>
+      <button type="button" onClick={() => { setShowCreateShortCode(true); }}> Create yours short code</button>
+      <button type="button" onClick={() => { setShowCreateExpiryDate(true); }}> Create yours expiry date</button>
     </form>
   );
 };

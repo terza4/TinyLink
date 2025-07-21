@@ -1,0 +1,29 @@
+services:
+  db:
+    image: mariadb:11
+    container_name: tinylink_mariadb
+    environment:
+      MARIADB_DATABASE: tinylinkdb
+      MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: "yes"
+    ports:
+      - "3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - tinylink-net
+
+  app:
+    build: .
+    container_name: tinylink_app
+    depends_on:
+      - db
+    ports:
+      - "8080:8080"
+    networks:
+      - tinylink-net
+
+volumes:
+  db_data:
+
+networks:
+  tinylink-net:

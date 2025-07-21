@@ -2,6 +2,7 @@ package com.example.tinylink.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.web.servlet.config.annotation.*;
 
 @Configuration
@@ -14,7 +15,20 @@ public class CorsConfig implements WebMvcConfigurer {
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*");
     }
+
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
  
 

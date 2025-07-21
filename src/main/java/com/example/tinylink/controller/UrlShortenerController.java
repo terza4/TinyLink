@@ -2,10 +2,15 @@ package com.example.tinylink.controller;
 
 import com.example.tinylink.dto.LinkDTO.ShortenRequest;
 import com.example.tinylink.dto.LinkDTO.ShortenResponse;
+import com.example.tinylink.dto.LinkDTO.HistoryResponse;
 import com.example.tinylink.entity.UrlMapping;
+import com.example.tinylink.entity.User;
 import com.example.tinylink.service.UrlShortenerService;
+import com.example.tinylink.dto.StatsDTO.StatsDTO;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
@@ -23,23 +28,24 @@ public class UrlShortenerController {
 
     private final UrlShortenerService urlShortenerService;
 
+    @Value("${tinylink.base-url}")
+    private String baseUrl;
+
     @PostMapping("/shorten")
-    public ResponseEntity<ShortenResponse> shorten(@RequestBody ShortenRequest request) {
+    @RateLimiter(name = "shortenUrl")
+    public ResponseEntity<ShortenResponse> shorten(@RequestBody @Valid ShortenRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         String username = null;
         if (authentication != null && authentication.isAuthenticated()
                 && !(authentication instanceof AnonymousAuthenticationToken)) {
             username = authentication.getName();
-            System.out.println("Ulogovani korisnik: " + username);
-        } else {
-            System.out.println("Anonimni korisnik kreira link");
         }
 
-        String shortCode = urlShortenerService.shortenUrl(request.getUrl(), username);
+        String shortCode = urlShortenerService.shortenUrl(request.getShortCodee(), request.getUrl(), request.getExpiryDate(), username);
 
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(new ShortenResponse("http://localhost:8080/api/" + shortCode));
+                .body(new ShortenResponse(baseUrl + shortCode));
     }
 
         @GetMapping("/{shortCode}")
@@ -49,7 +55,7 @@ public class UrlShortenerController {
         }
 
     @GetMapping("/history")
-    public ResponseEntity<List<ShortenResponse>> getUserHistory() {
+    public ResponseEntity<List<HistoryResponse>> getUserHistory() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || !authentication.isAuthenticated()
@@ -60,11 +66,19 @@ public class UrlShortenerController {
         String username = authentication.getName();
         List<UrlMapping> mappings = urlShortenerService.getAllByUsername(username);
 
-        List<ShortenResponse> responses = mappings.stream()
-                .map(mapping -> new ShortenResponse("http://localhost:8080/api/" + mapping.getShortCode()))
+        List<HistoryResponse> responses = mappings.stream()
+                .map(mapping -> new HistoryResponse(baseUrl + mapping.getShortCode(), mapping.getClickCount()))
                 .toList();
 
+
+
         return ResponseEntity.ok(responses);
+    }
+
+    @GetMapping("/stats/{shortCode}")
+    public ResponseEntity<StatsDTO> getStats(@PathVariable String shortCode){
+          StatsDTO stats = urlShortenerService.Stats(shortCode);
+          return ResponseEntity.ok(stats);
     }
 
     @DeleteMapping("/delete/{shortCode}")
